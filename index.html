@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Banco de Wearables</title>
-<meta name="description" content="Simulador visual de Apple Watch y Wear OS para previsualizar enlaces o HTML de tu app en pantallas redondas y cuadradas.">
+<title>Banco de Dispositivos</title>
+<meta name="description" content="Simulador visual de Apple Watch, Wear OS, iPhone y Android para previsualizar enlaces o HTML de tu app en distintas pantallas.">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
@@ -40,7 +40,7 @@
   }
 
   .page{
-    max-width:1040px;
+    max-width:1100px;
     margin:0 auto;
     padding-inline:16px;
     padding-block:28px 60px;
@@ -80,7 +80,7 @@
     margin:0;
     font-size:13px;
     color:var(--text-dim);
-    max-width:46ch;
+    max-width:50ch;
   }
   .status{
     font-family:var(--mono);
@@ -146,6 +146,7 @@
     padding:8px 14px;
     cursor:pointer;
     transition:background .15s, color .15s;
+    white-space:nowrap;
   }
   .seg-btn:hover{color:var(--text);}
   .seg-btn.active{background:var(--accent);color:var(--accent-ink);}
@@ -162,7 +163,7 @@
     border:1px solid var(--border);
     border-radius:8px;
     padding:9px 10px;
-    min-width:180px;
+    min-width:190px;
   }
 
   .switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;font-family:var(--sans);text-transform:none;letter-spacing:0;}
@@ -291,6 +292,8 @@
     justify-content:center;
   }
   .case.round{border-radius:50%;}
+  .case.phone.iphone{background:linear-gradient(160deg,#5c5f66,#1c1e22);}
+  .case.phone.android{background:linear-gradient(160deg,#33363d,#121316);}
 
   .screen{
     position:relative;
@@ -304,20 +307,25 @@
     justify-content:center;
   }
   .case.round .screen{border-radius:50%;}
-
-  .screen iframe{
-    width:100%;
-    height:100%;
-    border:0;
-    background:#000;
+  .case.phone .screen{
+    width:calc(var(--w) - 6px);
+    height:calc(var(--h) - 6px);
+    border-radius:calc(var(--radius) - 5px);
   }
-  .screen .placeholder{
+
+  .screen-content{width:100%;height:100%;}
+  .screen-content iframe{width:100%;height:100%;border:0;background:#000;}
+  .screen-content .placeholder{
     font-family:var(--mono);
     font-size:11px;
     color:var(--text-faint);
     text-align:center;
     padding:12px;
   }
+
+  .notch{position:absolute;inset:0;z-index:2;pointer-events:none;}
+  .island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:38%;max-width:92px;height:9px;border-radius:9px;background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);}
+  .punch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:#000;border:1px solid #232323;}
 
   .crown{
     position:absolute;
@@ -344,6 +352,22 @@
   }
   .case.round .crown{top:26%;right:-10px;transform:rotate(-18deg);}
   .case.round .side-btn{top:56%;right:-7px;}
+
+  .edge-btn{
+    position:absolute;
+    width:3px;
+    border-radius:2px;
+    background:linear-gradient(90deg,#4a5058,#20232a);
+    border:1px solid rgba(0,0,0,.4);
+  }
+  .edge-btn.left{left:-4px;box-shadow:-2px 0 4px rgba(0,0,0,.35);}
+  .edge-btn.right{right:-4px;box-shadow:2px 0 4px rgba(0,0,0,.35);}
+  .btn-action{top:11%;height:4.5%;min-height:12px;}
+  .btn-vol-up{top:18%;height:7.5%;min-height:24px;}
+  .btn-vol-down{top:27%;height:7.5%;min-height:24px;}
+  .btn-power-r{top:19%;height:10%;min-height:30px;}
+  .btn-vol-r{top:19%;height:10%;min-height:30px;}
+  .btn-power-r2{top:31%;height:6%;min-height:18px;}
 
   .flat-mask{
     position:absolute;
@@ -377,11 +401,11 @@
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="3"></rect><path d="M9 3h6M9 21h6M12 10v2.5l1.6 1"></path></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"></rect><path d="M10 19h4"></path></svg>
       </span>
       <div>
-        <h1>Banco de Wearables</h1>
-        <p class="tagline">Simulador de pantallas Apple Watch y Wear OS para revisar enlaces o el HTML de tu app antes de instalarlos en un reloj real.</p>
+        <h1>Banco de Dispositivos</h1>
+        <p class="tagline">Simulador de pantallas de Apple Watch, Wear OS, iPhone y Android para revisar enlaces o el HTML de tu app antes de instalarla en un dispositivo real.</p>
       </div>
     </div>
     <span class="status" id="statusPill" data-state="idle">En espera</span>
@@ -389,12 +413,16 @@
 
   <section class="controls" aria-label="Controles del dispositivo">
     <div class="control-group">
-      <label>Dispositivo</label>
-      <div class="seg" role="tablist" aria-label="Tipo de reloj">
-        <button class="seg-btn active" data-device="apple" role="tab" aria-selected="true">Apple Watch</button>
-        <button class="seg-btn" data-device="wearos" role="tab" aria-selected="false">Wear OS</button>
-        <button class="seg-btn" data-device="compare" role="tab" aria-selected="false">Comparar</button>
+      <label>Categoría</label>
+      <div class="seg" id="categorySeg" role="tablist" aria-label="Categoría de dispositivo">
+        <button class="seg-btn active" data-category="reloj" role="tab" aria-selected="true">Relojes</button>
+        <button class="seg-btn" data-category="celular" role="tab" aria-selected="false">Celulares</button>
       </div>
+    </div>
+
+    <div class="control-group">
+      <label>Dispositivo</label>
+      <div class="seg" id="deviceSeg" role="tablist" aria-label="Tipo de dispositivo"></div>
     </div>
 
     <div class="control-group">
@@ -435,19 +463,19 @@
     </div>
 
     <div class="source-panel" id="urlPanel" hidden>
-      <input id="urlInput" type="text" placeholder="https://tu-app.com/pantalla-reloj">
+      <input id="urlInput" type="text" placeholder="https://tu-app.com/pantalla">
       <p class="hint">Si la pantalla queda en negro, ese sitio probablemente bloquea ser incrustado (X-Frame-Options / CSP). Usa el modo HTML con tu propio código como alternativa.</p>
     </div>
 
     <div class="load-row">
-      <button class="load-btn" id="loadBtn">Cargar en el reloj</button>
+      <button class="load-btn" id="loadBtn">Cargar en el dispositivo</button>
       <button class="example-btn" id="exampleBtn">Restaurar ejemplo</button>
     </div>
   </section>
 
   <section class="bench" id="bench" aria-label="Vista previa de dispositivos"></section>
 
-  <p class="footnote">Los tamaños y resoluciones mostrados son referencias aproximadas por gama de dispositivo, no capturas de simuladores oficiales de Apple o Google.</p>
+  <p class="footnote">Los tamaños y resoluciones mostrados son referencias aproximadas por gama de dispositivo (basadas en datos públicos de Apple y en equivalentes comunes de Android), no capturas de simuladores oficiales.</p>
 </div>
 
 <script>
@@ -464,8 +492,27 @@
     { id:'44', label:'44 mm · Galaxy Watch', d:318, res:'450 × 450 px' },
     { id:'46', label:'46 mm · TicWatch / Fossil', d:344, res:'466 × 466 px' }
   ];
+  var IPHONE_SIZES = [
+    { id:'17', label:'17 / 17 Pro', w:221, h:481, radius:40, res:'1206 × 2622 px' },
+    { id:'17pm', label:'17 Pro Max', w:242, h:526, radius:44, res:'1320 × 2868 px' },
+    { id:'air', label:'Air', w:231, h:502, radius:42, res:'1260 × 2736 px' }
+  ];
+  var ANDROID_SIZES = [
+    { id:'compact', label:'Compacto (~6.1″)', w:211, h:470, radius:30, res:'viewport 384 × 854 dp' },
+    { id:'standard', label:'Estándar (~6.4″)', w:227, h:503, radius:32, res:'viewport 412 × 915 dp' },
+    { id:'large', label:'Grande (~6.8″)', w:227, h:528, radius:32, res:'viewport 412 × 960 dp' }
+  ];
+
+  var FAMILIES = {
+    apple:  { name:'Apple Watch', kind:'watch', sizes: APPLE_SIZES },
+    wearos: { name:'Wear OS',     kind:'watch', sizes: WEAROS_SIZES },
+    iphone: { name:'iPhone',      kind:'phone', sizes: IPHONE_SIZES },
+    android:{ name:'Android',     kind:'phone', sizes: ANDROID_SIZES }
+  };
+  var CATEGORY_DEVICES = { reloj:['apple','wearos'], celular:['iphone','android'] };
 
   var state = {
+    category: 'reloj',
     device: 'apple',
     sizeIndex: 1,
     flatTire: false,
@@ -476,6 +523,7 @@
   try {
     var saved = JSON.parse(localStorage.getItem('wearable-bench-state') || 'null');
     if (saved && typeof saved === 'object') {
+      state.category = saved.category || state.category;
       state.device = saved.device || state.device;
       state.sizeIndex = typeof saved.sizeIndex === 'number' ? saved.sizeIndex : state.sizeIndex;
       state.flatTire = !!saved.flatTire;
@@ -489,6 +537,8 @@
   }
 
   var bench = document.getElementById('bench');
+  var categorySeg = document.getElementById('categorySeg');
+  var deviceSeg = document.getElementById('deviceSeg');
   var sizeSelect = document.getElementById('sizeSelect');
   var flatTireGroup = document.getElementById('flatTireGroup');
   var flatTireToggle = document.getElementById('flatTireToggle');
@@ -505,50 +555,74 @@
   var warnTimer = null;
   var pendingFrames = 0;
 
-  function buildCaseHtml(kind, sizeCfg){
-    var isApple = kind === 'apple';
-    var w = isApple ? sizeCfg.w : sizeCfg.d;
-    var h = isApple ? sizeCfg.h : sizeCfg.d;
-    var radius = isApple ? sizeCfg.radius : (w/2);
-    var flat = !isApple && state.flatTire;
-    var flatH = flat ? Math.round(h * 0.16) : 0;
+  function sizeListFor(){
+    if (state.category === 'celular') {
+      return state.device === 'android' ? ANDROID_SIZES : IPHONE_SIZES;
+    }
+    return state.device === 'wearos' ? WEAROS_SIZES : APPLE_SIZES;
+  }
 
+  function buildCaseHtml(key, sizeCfg){
+    var fam = FAMILIES[key];
+
+    if (fam.kind === 'watch') {
+      var isApple = key === 'apple';
+      var w = isApple ? sizeCfg.w : sizeCfg.d;
+      var h = isApple ? sizeCfg.h : sizeCfg.d;
+      var radius = isApple ? sizeCfg.radius : (w/2);
+      var flat = !isApple && state.flatTire;
+      var flatH = flat ? Math.round(h * 0.16) : 0;
+
+      var caseStyle = '--w:'+w+'px;--h:'+h+'px;--radius:'+radius+'px;';
+      var html = '<div class="case'+(isApple?'':' round')+'" style="'+caseStyle+'">';
+      html += '<div class="crown"></div><div class="side-btn"></div>';
+      html += '<div class="screen"><div class="screen-content"><div class="placeholder">Sin contenido cargado</div></div></div>';
+      if (flat) html += '<div class="flat-mask" style="--flat-h:'+flatH+'px"></div>';
+      html += '</div>';
+      return html;
+    }
+
+    // phone
+    var w = sizeCfg.w, h = sizeCfg.h, radius = sizeCfg.radius;
     var caseStyle = '--w:'+w+'px;--h:'+h+'px;--radius:'+radius+'px;';
-    var html = '';
-    html += '<div class="case'+(isApple?'':' round')+'" style="'+caseStyle+'">';
-    html += '<div class="crown"></div><div class="side-btn"></div>';
-    html += '<div class="screen"><div class="placeholder">Sin contenido cargado</div></div>';
-    if (flat) html += '<div class="flat-mask" style="--flat-h:'+flatH+'px"></div>';
+    var html = '<div class="case phone '+key+'" style="'+caseStyle+'">';
+    if (key === 'iphone') {
+      html += '<div class="edge-btn left btn-action"></div>';
+      html += '<div class="edge-btn left btn-vol-up"></div>';
+      html += '<div class="edge-btn left btn-vol-down"></div>';
+      html += '<div class="edge-btn right btn-power-r"></div>';
+      html += '<div class="screen"><div class="notch"><div class="island"></div></div><div class="screen-content"><div class="placeholder">Sin contenido cargado</div></div></div>';
+    } else {
+      html += '<div class="edge-btn right btn-vol-r"></div>';
+      html += '<div class="edge-btn right btn-power-r2"></div>';
+      html += '<div class="screen"><div class="notch"><div class="punch"></div></div><div class="screen-content"><div class="placeholder">Sin contenido cargado</div></div></div>';
+    }
     html += '</div>';
     return html;
   }
 
   function renderBench(){
-    var list = [];
-    if (state.device === 'compare') {
-      list.push({ kind:'apple', size: APPLE_SIZES[Math.min(state.sizeIndex, APPLE_SIZES.length-1)] });
-      list.push({ kind:'wearos', size: WEAROS_SIZES[Math.min(state.sizeIndex, WEAROS_SIZES.length-1)] });
-    } else if (state.device === 'apple') {
-      list.push({ kind:'apple', size: APPLE_SIZES[state.sizeIndex] || APPLE_SIZES[1] });
-    } else {
-      list.push({ kind:'wearos', size: WEAROS_SIZES[state.sizeIndex] || WEAROS_SIZES[1] });
-    }
-
+    var keys = state.device === 'compare' ? CATEGORY_DEVICES[state.category] : [state.device];
     var scale = state.zoom / 100;
     bench.innerHTML = '';
 
-    list.forEach(function(item){
+    keys.forEach(function(key){
+      var fam = FAMILIES[key];
+      var sizes = fam.sizes;
+      var size = sizes[Math.min(state.sizeIndex, sizes.length - 1)];
+
       var wrap = document.createElement('div');
       wrap.className = 'watch-wrap';
       wrap.style.transform = 'scale(' + scale + ')';
 
       var label = document.createElement('div');
       label.className = 'watch-label';
-      label.innerHTML = '<b>' + (item.kind === 'apple' ? 'Apple Watch' : 'Wear OS') + ' · ' + item.size.label + '</b><span class="res">' + item.size.res + '</span>';
+      label.innerHTML = '<b>' + fam.name + ' · ' + size.label + '</b><span class="res">' + size.res + '</span>';
 
       var pedestal = document.createElement('div');
       pedestal.className = 'pedestal';
-      pedestal.innerHTML = '<div class="lug lug-top"></div><div class="lug lug-bottom"></div>' + buildCaseHtml(item.kind, item.size);
+      var lugs = fam.kind === 'watch' ? '<div class="lug lug-top"></div><div class="lug lug-bottom"></div>' : '';
+      pedestal.innerHTML = lugs + buildCaseHtml(key, size);
 
       var watch = document.createElement('div');
       watch.className = 'watch';
@@ -568,7 +642,7 @@
   }
 
   function loadContent(){
-    var screens = bench.querySelectorAll('.screen');
+    var screens = bench.querySelectorAll('.screen-content');
     if (!screens.length) return;
 
     clearTimeout(warnTimer);
@@ -578,7 +652,7 @@
     screens.forEach(function(screen){
       screen.innerHTML = '';
       var iframe = document.createElement('iframe');
-      iframe.setAttribute('title', 'Vista previa del reloj');
+      iframe.setAttribute('title', 'Vista previa del dispositivo');
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
 
       iframe.addEventListener('load', function(){
@@ -594,7 +668,7 @@
       } else {
         var url = urlInput.value.trim();
         if (!url) {
-          screen.innerHTML = '<div class="placeholder">Escribe una URL y pulsa "Cargar en el reloj"</div>';
+          screen.innerHTML = '<div class="placeholder">Escribe una URL y pulsa "Cargar en el dispositivo"</div>';
           setStatus('idle', 'En espera');
           return;
         }
@@ -613,10 +687,24 @@
     persist();
   }
 
+  function renderDeviceTabs(){
+    var keys = CATEGORY_DEVICES[state.category];
+    if (keys.indexOf(state.device) === -1 && state.device !== 'compare') {
+      state.device = keys[0];
+    }
+    deviceSeg.innerHTML =
+      '<button class="seg-btn" data-device="'+keys[0]+'" role="tab">'+FAMILIES[keys[0]].name+'</button>' +
+      '<button class="seg-btn" data-device="'+keys[1]+'" role="tab">'+FAMILIES[keys[1]].name+'</button>' +
+      '<button class="seg-btn" data-device="compare" role="tab">Comparar</button>';
+    Array.prototype.forEach.call(deviceSeg.children, function(btn){
+      var active = btn.dataset.device === state.device;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+  }
+
   function populateSizeSelect(){
-    var list = state.device === 'wearos' ? WEAROS_SIZES
-      : state.device === 'compare' ? APPLE_SIZES
-      : APPLE_SIZES;
+    var list = sizeListFor();
     sizeSelect.innerHTML = '';
     list.forEach(function(sz, i){
       var opt = document.createElement('option');
@@ -626,18 +714,32 @@
     });
     sizeSelect.value = Math.min(state.sizeIndex, list.length - 1);
     state.sizeIndex = Number(sizeSelect.value);
-    flatTireGroup.hidden = state.device === 'apple';
+    flatTireGroup.hidden = !(state.category === 'reloj' && state.device !== 'apple');
   }
 
-  document.querySelectorAll('.seg-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected','true');
-      state.device = btn.dataset.device;
-      populateSizeSelect();
-      renderBench();
+  categorySeg.addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    Array.prototype.forEach.call(categorySeg.children, function(b){
+      var active = b === btn;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', String(active));
     });
+    state.category = btn.dataset.category;
+    renderDeviceTabs();
+    populateSizeSelect();
+    renderBench();
+    persist();
+  });
+
+  deviceSeg.addEventListener('click', function(e){
+    var btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    state.device = btn.dataset.device;
+    renderDeviceTabs();
+    populateSizeSelect();
+    renderBench();
+    persist();
   });
 
   sizeSelect.addEventListener('change', function(){
@@ -683,11 +785,6 @@
   flatTireToggle.checked = state.flatTire;
   zoomRange.value = state.zoom;
   zoomValue.textContent = state.zoom + '%';
-  document.querySelectorAll('.seg-btn').forEach(function(b){
-    var active = b.dataset.device === state.device;
-    b.classList.toggle('active', active);
-    b.setAttribute('aria-selected', String(active));
-  });
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var active = b.dataset.mode === state.mode;
     b.classList.toggle('active', active);
@@ -696,6 +793,7 @@
   htmlPanel.hidden = state.mode !== 'html';
   urlPanel.hidden = state.mode !== 'url';
 
+  renderDeviceTabs();
   populateSizeSelect();
   renderBench();
 })();
