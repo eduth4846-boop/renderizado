@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Banco de Wearables</title>
+<meta name="description" content="Simulador visual de Apple Watch y Wear OS para previsualizar enlaces o HTML de tu app en pantallas redondas y cuadradas.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#0a0c0f;
+    --bg-grid:#12151a;
+    --surface:#14181e;
+    --surface-2:#1b2028;
+    --pedestal:#171b22;
+    --border:#262c36;
+    --text:#eef0f3;
+    --text-dim:#8f98a6;
+    --text-faint:#5c6470;
+    --accent:#ffb454;
+    --accent-ink:#241705;
+    --accent-2:#5ec8ff;
+    --good:#4ade80;
+    --warn:#ffcf6b;
+    --bad:#ff6b6b;
+    --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0) 0 0/22px 22px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+  }
+
+  .page{
+    max-width:1040px;
+    margin:0 auto;
+    padding-inline:16px;
+    padding-block:28px 60px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+
+  /* ---------- header ---------- */
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--border);
+    padding-bottom:18px;
+  }
+  .brand{display:flex;align-items:flex-start;gap:12px;}
+  .brand-mark{
+    flex:none;
+    width:38px;height:38px;
+    border-radius:10px;
+    background:linear-gradient(160deg,var(--surface-2),var(--surface));
+    border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand-mark svg{width:20px;height:20px;stroke:var(--accent);}
+  h1{
+    font-family:var(--mono);
+    font-size:20px;
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin:0 0 4px;
+  }
+  .tagline{
+    margin:0;
+    font-size:13px;
+    color:var(--text-dim);
+    max-width:46ch;
+  }
+  .status{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:999px;
+    padding:6px 12px;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    white-space:nowrap;
+  }
+  .status::before{
+    content:'';
+    width:7px;height:7px;border-radius:50%;
+    background:var(--text-faint);
+    box-shadow:0 0 0 3px rgba(255,255,255,.04);
+  }
+  .status[data-state="loaded"]{color:var(--good);}
+  .status[data-state="loaded"]::before{background:var(--good);box-shadow:0 0 0 3px rgba(74,222,128,.15);}
+  .status[data-state="loading"]{color:var(--warn);}
+  .status[data-state="loading"]::before{background:var(--warn);box-shadow:0 0 0 3px rgba(255,207,107,.15);}
+  .status[data-state="warn"]{color:var(--bad);}
+  .status[data-state="warn"]::before{background:var(--bad);box-shadow:0 0 0 3px rgba(255,107,107,.15);}
+
+  /* ---------- controls ---------- */
+  section.controls, section.source{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    align-items:flex-end;
+  }
+
+  .control-group{display:flex;flex-direction:column;gap:7px;}
+  .control-group label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--text-dim);
+    font-family:var(--mono);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .seg{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:4px;}
+  .seg-btn{
+    font-family:var(--sans);
+    font-size:13px;
+    font-weight:500;
+    color:var(--text-dim);
+    background:transparent;
+    border:none;
+    border-radius:7px;
+    padding:8px 14px;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .seg-btn:hover{color:var(--text);}
+  .seg-btn.active{background:var(--accent);color:var(--accent-ink);}
+  .seg-btn:focus-visible, select:focus-visible, input:focus-visible, button:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--accent-2);
+    outline-offset:2px;
+  }
+
+  select, .num-input{
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--text);
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 10px;
+    min-width:180px;
+  }
+
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;font-family:var(--sans);text-transform:none;letter-spacing:0;}
+  .switch input{width:34px;height:20px;appearance:none;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;position:relative;cursor:pointer;flex:none;}
+  .switch input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--text-faint);transition:transform .15s, background .15s;}
+  .switch input:checked{background:rgba(255,180,84,.25);border-color:var(--accent);}
+  .switch input:checked::after{transform:translateX(14px);background:var(--accent);}
+
+  #zoomRange{width:150px;accent-color:var(--accent);}
+  #zoomValue{color:var(--text);font-family:var(--mono);}
+
+  /* ---------- source panel ---------- */
+  section.source{flex-direction:column;align-items:stretch;gap:12px;}
+  .source-tabs{display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:4px;width:fit-content;}
+  .tab-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.03em;
+    color:var(--text-dim);
+    background:transparent;
+    border:none;
+    border-radius:7px;
+    padding:7px 16px;
+    cursor:pointer;
+  }
+  .tab-btn.active{background:var(--surface);color:var(--accent);border:1px solid var(--border);}
+
+  .source-panel{display:flex;flex-direction:column;gap:8px;}
+  textarea#htmlInput{
+    width:100%;
+    min-height:120px;
+    resize:vertical;
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--text);
+    background:var(--bg-grid);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px;
+  }
+  #urlInput{width:100%;font-family:var(--mono);}
+  .hint{margin:0;font-size:12px;color:var(--text-faint);line-height:1.5;}
+
+  .load-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .load-btn{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:13px;
+    color:var(--accent-ink);
+    background:var(--accent);
+    border:none;
+    border-radius:8px;
+    padding:10px 18px;
+    cursor:pointer;
+  }
+  .load-btn:hover{filter:brightness(1.06);}
+  .example-btn{
+    font-family:var(--sans);
+    font-size:12.5px;
+    color:var(--text-dim);
+    background:transparent;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:9px 14px;
+    cursor:pointer;
+  }
+  .example-btn:hover{color:var(--text);border-color:var(--text-faint);}
+
+  /* ---------- bench ---------- */
+  .bench{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:56px;
+    padding:44px 20px;
+    background:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1px, transparent 0) 0 0/24px 24px,
+      var(--bg-grid);
+    border:1px solid var(--border);
+    border-radius:16px;
+  }
+
+  .watch-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;transition:transform .15s ease;}
+  .watch-label{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .watch-label b{color:var(--text);font-weight:600;font-size:13px;}
+  .watch-label .res{color:var(--text-faint);font-size:11px;}
+
+  .watch{position:relative;}
+  .pedestal{
+    background:var(--pedestal);
+    border-radius:22px;
+    padding:26px;
+    display:flex;
+  }
+
+  .lug{
+    position:absolute;
+    left:50%;
+    width:36%;
+    height:16px;
+    background:linear-gradient(180deg,#2a2f37,#181b21);
+    border:1px solid var(--border);
+  }
+  .lug-top{top:-11px;transform:translateX(-50%);clip-path:polygon(18% 100%,82% 100%,100% 0,0 0);border-radius:4px 4px 0 0;}
+  .lug-bottom{bottom:-11px;transform:translateX(-50%);clip-path:polygon(0 100%,100% 100%,82% 0,18% 0);border-radius:0 0 4px 4px;}
+
+  .case{
+    position:relative;
+    width:var(--w);
+    height:var(--h);
+    border-radius:var(--radius);
+    background:linear-gradient(160deg,#3a3f48,#121419);
+    box-shadow:0 18px 34px -14px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.05);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .case.round{border-radius:50%;}
+
+  .screen{
+    position:relative;
+    width:calc(var(--w) - 15px);
+    height:calc(var(--h) - 15px);
+    border-radius:calc(var(--radius) - 8px);
+    background:#000;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .case.round .screen{border-radius:50%;}
+
+  .screen iframe{
+    width:100%;
+    height:100%;
+    border:0;
+    background:#000;
+  }
+  .screen .placeholder{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+    text-align:center;
+    padding:12px;
+  }
+
+  .crown{
+    position:absolute;
+    right:-9px;
+    top:36%;
+    width:11px;
+    height:15%;
+    min-height:26px;
+    border-radius:4px;
+    background:linear-gradient(90deg,#4a5058,#20232a);
+    border:1px solid rgba(0,0,0,.4);
+    box-shadow:2px 0 4px rgba(0,0,0,.4);
+  }
+  .side-btn{
+    position:absolute;
+    right:-7px;
+    top:60%;
+    width:7px;
+    height:11%;
+    min-height:18px;
+    border-radius:4px;
+    background:linear-gradient(90deg,#4a5058,#20232a);
+    border:1px solid rgba(0,0,0,.4);
+  }
+  .case.round .crown{top:26%;right:-10px;transform:rotate(-18deg);}
+  .case.round .side-btn{top:56%;right:-7px;}
+
+  .flat-mask{
+    position:absolute;
+    left:0;right:0;bottom:0;
+    height:var(--flat-h,0px);
+    background:var(--pedestal);
+    border-radius:0 0 12px 12px;
+    box-shadow:0 -1px 0 rgba(0,0,0,.35);
+  }
+
+  .footnote{
+    font-size:12px;
+    color:var(--text-faint);
+    text-align:center;
+    margin:0;
+  }
+
+  @media (max-width:640px){
+    section.controls, section.source{padding:14px;}
+    .control-group{flex:1 1 140px;}
+    select,.num-input{min-width:0;width:100%;}
+    .bench{gap:32px;padding:32px 12px;}
+    h1{font-size:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="3"></rect><path d="M9 3h6M9 21h6M12 10v2.5l1.6 1"></path></svg>
+      </span>
+      <div>
+        <h1>Banco de Wearables</h1>
+        <p class="tagline">Simulador de pantallas Apple Watch y Wear OS para revisar enlaces o el HTML de tu app antes de instalarlos en un reloj real.</p>
+      </div>
+    </div>
+    <span class="status" id="statusPill" data-state="idle">En espera</span>
+  </header>
+
+  <section class="controls" aria-label="Controles del dispositivo">
+    <div class="control-group">
+      <label>Dispositivo</label>
+      <div class="seg" role="tablist" aria-label="Tipo de reloj">
+        <button class="seg-btn active" data-device="apple" role="tab" aria-selected="true">Apple Watch</button>
+        <button class="seg-btn" data-device="wearos" role="tab" aria-selected="false">Wear OS</button>
+        <button class="seg-btn" data-device="compare" role="tab" aria-selected="false">Comparar</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label for="sizeSelect">Tamaño</label>
+      <select id="sizeSelect"></select>
+    </div>
+
+    <div class="control-group" id="flatTireGroup" hidden>
+      <label>Detalle de pantalla</label>
+      <label class="switch">
+        <input type="checkbox" id="flatTireToggle">
+        <span>Corte inferior (flat tire)</span>
+      </label>
+    </div>
+
+    <div class="control-group">
+      <label for="zoomRange">Zoom <span id="zoomValue">100%</span></label>
+      <input type="range" id="zoomRange" min="60" max="150" value="100" step="5">
+    </div>
+  </section>
+
+  <section class="source" aria-label="Contenido a previsualizar">
+    <div class="source-tabs" role="tablist">
+      <button class="tab-btn active" data-mode="html" role="tab" aria-selected="true">Código HTML</button>
+      <button class="tab-btn" data-mode="url" role="tab" aria-selected="false">URL</button>
+    </div>
+
+    <div class="source-panel" id="htmlPanel">
+      <textarea id="htmlInput" spellcheck="false" rows="6">&lt;div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:-apple-system,Roboto,sans-serif;background:#000;color:#fff;"&gt;
+  &lt;div style="font-size:10px;letter-spacing:.08em;opacity:.55;"&gt;EJEMPLO&lt;/div&gt;
+  &lt;div style="font-size:32px;font-weight:700;"&gt;10:24&lt;/div&gt;
+  &lt;div style="font-size:12px;opacity:.75;"&gt;6.482 pasos · 72 ppm&lt;/div&gt;
+  &lt;div style="width:68%;height:6px;border-radius:4px;background:#2a2a2a;overflow:hidden;"&gt;
+    &lt;div style="width:64%;height:100%;background:#ffb454;"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</textarea>
+      <p class="hint">Pega aquí el HTML/CSS/JS de tu app. Si tu sitio bloquea iframes (X-Frame-Options/CSP), agrega al inicio &lt;base href="https://tu-dominio.com/"&gt; para que las rutas relativas de tus assets sigan funcionando.</p>
+    </div>
+
+    <div class="source-panel" id="urlPanel" hidden>
+      <input id="urlInput" type="text" placeholder="https://tu-app.com/pantalla-reloj">
+      <p class="hint">Si la pantalla queda en negro, ese sitio probablemente bloquea ser incrustado (X-Frame-Options / CSP). Usa el modo HTML con tu propio código como alternativa.</p>
+    </div>
+
+    <div class="load-row">
+      <button class="load-btn" id="loadBtn">Cargar en el reloj</button>
+      <button class="example-btn" id="exampleBtn">Restaurar ejemplo</button>
+    </div>
+  </section>
+
+  <section class="bench" id="bench" aria-label="Vista previa de dispositivos"></section>
+
+  <p class="footnote">Los tamaños y resoluciones mostrados son referencias aproximadas por gama de dispositivo, no capturas de simuladores oficiales de Apple o Google.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var APPLE_SIZES = [
+    { id:'41', label:'41 mm', w:282, h:344, radius:70, res:'352 × 430 px' },
+    { id:'45', label:'45 mm', w:317, h:387, radius:78, res:'396 × 484 px' },
+    { id:'49', label:'49 mm Ultra', w:330, h:404, radius:64, res:'410 × 502 px' }
+  ];
+  var WEAROS_SIZES = [
+    { id:'41', label:'41 mm · Pixel Watch', d:288, res:'384 × 384 px' },
+    { id:'44', label:'44 mm · Galaxy Watch', d:318, res:'450 × 450 px' },
+    { id:'46', label:'46 mm · TicWatch / Fossil', d:344, res:'466 × 466 px' }
+  ];
+
+  var state = {
+    device: 'apple',
+    sizeIndex: 1,
+    flatTire: false,
+    zoom: 100,
+    mode: 'html'
+  };
+
+  try {
+    var saved = JSON.parse(localStorage.getItem('wearable-bench-state') || 'null');
+    if (saved && typeof saved === 'object') {
+      state.device = saved.device || state.device;
+      state.sizeIndex = typeof saved.sizeIndex === 'number' ? saved.sizeIndex : state.sizeIndex;
+      state.flatTire = !!saved.flatTire;
+      state.zoom = saved.zoom || state.zoom;
+      state.mode = saved.mode || state.mode;
+    }
+  } catch (e) {}
+
+  function persist(){
+    try { localStorage.setItem('wearable-bench-state', JSON.stringify(state)); } catch(e){}
+  }
+
+  var bench = document.getElementById('bench');
+  var sizeSelect = document.getElementById('sizeSelect');
+  var flatTireGroup = document.getElementById('flatTireGroup');
+  var flatTireToggle = document.getElementById('flatTireToggle');
+  var zoomRange = document.getElementById('zoomRange');
+  var zoomValue = document.getElementById('zoomValue');
+  var statusPill = document.getElementById('statusPill');
+  var htmlInput = document.getElementById('htmlInput');
+  var urlInput = document.getElementById('urlInput');
+  var htmlPanel = document.getElementById('htmlPanel');
+  var urlPanel = document.getElementById('urlPanel');
+  var loadBtn = document.getElementById('loadBtn');
+  var exampleBtn = document.getElementById('exampleBtn');
+  var defaultHtml = htmlInput.value;
+  var warnTimer = null;
+  var pendingFrames = 0;
+
+  function buildCaseHtml(kind, sizeCfg){
+    var isApple = kind === 'apple';
+    var w = isApple ? sizeCfg.w : sizeCfg.d;
+    var h = isApple ? sizeCfg.h : sizeCfg.d;
+    var radius = isApple ? sizeCfg.radius : (w/2);
+    var flat = !isApple && state.flatTire;
+    var flatH = flat ? Math.round(h * 0.16) : 0;
+
+    var caseStyle = '--w:'+w+'px;--h:'+h+'px;--radius:'+radius+'px;';
+    var html = '';
+    html += '<div class="case'+(isApple?'':' round')+'" style="'+caseStyle+'">';
+    html += '<div class="crown"></div><div class="side-btn"></div>';
+    html += '<div class="screen"><div class="placeholder">Sin contenido cargado</div></div>';
+    if (flat) html += '<div class="flat-mask" style="--flat-h:'+flatH+'px"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderBench(){
+    var list = [];
+    if (state.device === 'compare') {
+      list.push({ kind:'apple', size: APPLE_SIZES[Math.min(state.sizeIndex, APPLE_SIZES.length-1)] });
+      list.push({ kind:'wearos', size: WEAROS_SIZES[Math.min(state.sizeIndex, WEAROS_SIZES.length-1)] });
+    } else if (state.device === 'apple') {
+      list.push({ kind:'apple', size: APPLE_SIZES[state.sizeIndex] || APPLE_SIZES[1] });
+    } else {
+      list.push({ kind:'wearos', size: WEAROS_SIZES[state.sizeIndex] || WEAROS_SIZES[1] });
+    }
+
+    var scale = state.zoom / 100;
+    bench.innerHTML = '';
+
+    list.forEach(function(item){
+      var wrap = document.createElement('div');
+      wrap.className = 'watch-wrap';
+      wrap.style.transform = 'scale(' + scale + ')';
+
+      var label = document.createElement('div');
+      label.className = 'watch-label';
+      label.innerHTML = '<b>' + (item.kind === 'apple' ? 'Apple Watch' : 'Wear OS') + ' · ' + item.size.label + '</b><span class="res">' + item.size.res + '</span>';
+
+      var pedestal = document.createElement('div');
+      pedestal.className = 'pedestal';
+      pedestal.innerHTML = '<div class="lug lug-top"></div><div class="lug lug-bottom"></div>' + buildCaseHtml(item.kind, item.size);
+
+      var watch = document.createElement('div');
+      watch.className = 'watch';
+      watch.appendChild(pedestal);
+
+      wrap.appendChild(label);
+      wrap.appendChild(watch);
+      bench.appendChild(wrap);
+    });
+
+    loadContent();
+  }
+
+  function setStatus(stateName, text){
+    statusPill.dataset.state = stateName;
+    statusPill.textContent = text;
+  }
+
+  function loadContent(){
+    var screens = bench.querySelectorAll('.screen');
+    if (!screens.length) return;
+
+    clearTimeout(warnTimer);
+    pendingFrames = screens.length;
+    setStatus('loading', 'Cargando…');
+
+    screens.forEach(function(screen){
+      screen.innerHTML = '';
+      var iframe = document.createElement('iframe');
+      iframe.setAttribute('title', 'Vista previa del reloj');
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+
+      iframe.addEventListener('load', function(){
+        pendingFrames = Math.max(0, pendingFrames - 1);
+        if (pendingFrames === 0) {
+          clearTimeout(warnTimer);
+          setStatus('loaded', 'Cargado');
+        }
+      });
+
+      if (state.mode === 'html') {
+        iframe.srcdoc = htmlInput.value;
+      } else {
+        var url = urlInput.value.trim();
+        if (!url) {
+          screen.innerHTML = '<div class="placeholder">Escribe una URL y pulsa "Cargar en el reloj"</div>';
+          setStatus('idle', 'En espera');
+          return;
+        }
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        iframe.src = url;
+      }
+      screen.appendChild(iframe);
+    });
+
+    if (state.mode === 'url') {
+      warnTimer = setTimeout(function(){
+        setStatus('warn', 'Sin respuesta — puede estar bloqueado');
+      }, 4000);
+    }
+
+    persist();
+  }
+
+  function populateSizeSelect(){
+    var list = state.device === 'wearos' ? WEAROS_SIZES
+      : state.device === 'compare' ? APPLE_SIZES
+      : APPLE_SIZES;
+    sizeSelect.innerHTML = '';
+    list.forEach(function(sz, i){
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = sz.label;
+      sizeSelect.appendChild(opt);
+    });
+    sizeSelect.value = Math.min(state.sizeIndex, list.length - 1);
+    state.sizeIndex = Number(sizeSelect.value);
+    flatTireGroup.hidden = state.device === 'apple';
+  }
+
+  document.querySelectorAll('.seg-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected','true');
+      state.device = btn.dataset.device;
+      populateSizeSelect();
+      renderBench();
+    });
+  });
+
+  sizeSelect.addEventListener('change', function(){
+    state.sizeIndex = Number(sizeSelect.value);
+    renderBench();
+  });
+
+  flatTireToggle.addEventListener('change', function(){
+    state.flatTire = flatTireToggle.checked;
+    renderBench();
+  });
+
+  zoomRange.addEventListener('input', function(){
+    state.zoom = Number(zoomRange.value);
+    zoomValue.textContent = state.zoom + '%';
+    var wraps = bench.querySelectorAll('.watch-wrap');
+    wraps.forEach(function(w){ w.style.transform = 'scale(' + (state.zoom/100) + ')'; });
+    persist();
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected','true');
+      state.mode = btn.dataset.mode;
+      htmlPanel.hidden = state.mode !== 'html';
+      urlPanel.hidden = state.mode !== 'url';
+      persist();
+    });
+  });
+
+  loadBtn.addEventListener('click', loadContent);
+  exampleBtn.addEventListener('click', function(){
+    htmlInput.value = defaultHtml;
+    if (state.mode === 'html') loadContent();
+  });
+
+  urlInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') loadContent();
+  });
+
+  flatTireToggle.checked = state.flatTire;
+  zoomRange.value = state.zoom;
+  zoomValue.textContent = state.zoom + '%';
+  document.querySelectorAll('.seg-btn').forEach(function(b){
+    var active = b.dataset.device === state.device;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    var active = b.dataset.mode === state.mode;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', String(active));
+  });
+  htmlPanel.hidden = state.mode !== 'html';
+  urlPanel.hidden = state.mode !== 'url';
+
+  populateSizeSelect();
+  renderBench();
+})();
+</script>
+</body>
+</html>
